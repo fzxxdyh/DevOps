@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load mytags %}
+{% block content %}
+
+<div style="margin:0 auto;width: 100%; height: 600px;">
+<form method="post" >
+{% csrf_token %}
+
+<div id="config" style="margin:0 auto;width: 1300px;border: 1px solid;background-color: #faf2cc">
+        <div style="margin:0 auto;margin-top: 10px;">
+            <label style="width: 120px;text-align: right">使用现有环境</label>
+            <select style="width: 120px;" id="select_host_group" onchange="select_env(this)" name="mysql_ip">
+              {% select_env %}
+            </select>
+        </div>
+
+<hr/>
+        <div style="margin:0 auto;">
+            <label style="width: 120px;text-align: right">mysql ip:</label><input id="mysql_ip" name="mysql_ip" required style="width: 120px;" type="text">
+            <label style="width: 120px;text-align: right">redis ip:</label><input id="redis_ip" name="redis_ip" required style="width: 120px;" type="text">
+            <label style="width: 120px;text-align: right">zookeeper ip:</label><input id="zook_ip" name="zook_ip" required style="width: 120px;" type="text">
+            <label style="width: 120px;text-align: right">activemq ip:</label><input id="activemq_ip" name="activemq_ip" required style="width: 120px;" type="text">
+            <br/>
+            <label style="width: 120px;text-align: right">es ip:</label><input id="es_ip" name="es_ip" required style="width: 120px;" type="text">
+            <label style="width: 120px;text-align: right">FlowHYS ip:</label><input id="flowhys_ip" name="flowhys_ip" required style="width: 120px;" type="text">
+            <label style="width: 120px;text-align: right">logstash ip:</label><input id="log_ip" name="log_ip"  style="width: 120px;" type="text">
+            <br/>
+            <label style="width: 120px;text-align: right">es jvm:</label><input id="es_jvm" name="es_jvm"  style="width: 120px;" type="text" value="1G">
+            <label style="width: 120px;text-align: right">logstash jvm:</label><input id="log_jvm" name="log_jvm"  style="width: 120px;" type="text" VALUE="500M">
+            <label style="width: 120px;text-align: right">dblogstash jvm:</label><input id="dblog_jvm" name="dblog_jvm"  style="width: 120px;" type="text" VALUE="500M">
+            <label style="width: 120px;text-align: right">logcase jvm:</label><input id="logcs_jvm" name="logcs_jvm"  style="width: 120px;" type="text" VALUE="500M">
+            <br/><br/><br/>
+        </div>
+</div>
+
+<div id="version" style="margin:0 auto;width: 1300px;background-color: #faf2cc;overflow:auto;">
+    <div  style="float:left; width:433px;border: 1px solid;margin-left: 0px;">
+        {% select_version_files "G1_FILE" %}
+        <hr/>
+        <label>选择部署的主机</label>
+        {% select_host "G1_IP" %}
+        <hr/>
+    </div>
+
+    <div style="float:left; width:433px;border: 1px solid;margin-left: 0px;">
+        {% select_version_files "G2_FILE" %}
+        <hr/>
+        <label>选择部署的主机</label>
+        {% select_host "G2_IP" %}
+        <hr/>
+    </div>
+
+    <div style="float:left; width:434px;border: 1px solid;margin-left: 0px;">
+        {% select_version_files "G3_FILE" %}
+        <hr/>
+        <label>选择部署的主机</label>
+        {% select_host "G3_IP" %}
+        <hr/>
+    </div>
+
+
+
+</div>
+
+<div style="margin:0 auto; border:1px solid;width:1300px;background-color: #faf2cc;overflow:auto;">
+    <div style="float:left;width: 200px;margin-left: 40%;margin-top: 20px;margin-bottom: 20px;" >
+         <input type="submit" style="" class="btn btn-primary" value="一键部署">
+    </div>
+    <div style="float: left;margin-top: 20px;margin-bottom: 20px;">
+        <a style="" class="btn btn-danger" href="/iotmp/version/">取消</a>
+    </div>
+
+    <div style="margin:0 auto ;width:1200px;background-color: #faf2cc;overflow:auto;text-align: center">
+        <label>说明：本系统不支持mysql部署，选中的mysql安装文件会被忽略。</label>
+    </div>
+
+
+</div>
+
+
+
+
+
+
+</form>
+
+</div>
+
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function select_env(self) {
+    if ( self.value.length === 0 ){
+            //不发送查询，直接设置为空
+            document.getElementById('mysql_ip').value = "";
+            document.getElementById('redis_ip').value = "";
+            document.getElementById('zook_ip').value = "";
+            document.getElementById('activemq_ip').value = "";
+            document.getElementById('es_ip').value = "";
+            document.getElementById('flowhys_ip').value = "";
+            document.getElementById('log_ip').value = "";
+    }
+    else{
+        var pathname = "/iotmp/server/install/select_env/" + self.value + "/"; //url, 等于request.path，类似 /jenkins/id/
+        var xhr=new XMLHttpRequest();
+        xhr.open('get',pathname, true); // true表示异步（默认），false表示同步（不推荐）
+        //如果不继承form的csfs_token，可用此方法
+        var csrftoken = getCookie('csrftoken');
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+
+        // console.log(self.files);
+
+
+        //下面这两个监听事件写在send前面比较保险，写在后面可能等文件发送完成了才会执行
+        xhr.onreadystatechange=function (){
+            if (xhr.readyState==4 && xhr.status==200) {
+                var result = JSON.parse(xhr.responseText);
+                // JSON.stringify将对象转换成字符串
+                if ( JSON.stringify(result) == '{}' ){
+                    //后端返回空字典
+                    document.getElementById('mysql_ip').value = "";
+                    document.getElementById('redis_ip').value = "";
+                    document.getElementById('zook_ip').value = "";
+                    document.getElementById('activemq_ip').value = "";
+                    document.getElementById('es_ip').value = "";
+                    document.getElementById('flowhys_ip').value = "";
+                    document.getElementById('log_ip').value = "";
+                }
+                else{
+                    //后端返回具体数据
+                    document.getElementById('mysql_ip').value = result["mysql_ip"];
+                    document.getElementById('redis_ip').value = result["redis_ip"];
+                    document.getElementById('zook_ip').value = result["zook_ip"];
+                    document.getElementById('activemq_ip').value = result["activemq_ip"];
+                    document.getElementById('es_ip').value = result["es_ip"];
+                    document.getElementById('flowhys_ip').value = result["flowhys_ip"];
+                    document.getElementById('log_ip').value = result["log_ip"];
+                }
+
+                }
+
+        }
+
+        // get 方式，xhr无法使用formData发送参数
+        xhr.send(null);
+    }
+
+}
+
+function display_menu(self) {
+    var menu = [];
+    var child = self.parentNode.children; //只包括子节点，不包括子节点的后代
+    //alert(child.length);
+    for (var i=0, count=child.length; i<count; i++){
+        if (child[i] !== self){ //排除掉自己
+
+            if (child[i].style.display === 'none'){
+                child[i].style.display = 'block';
+            }
+            else{
+                child[i].style.display = 'none';
+            }
+
+        }
+    }
+}
+
+
+</script>
+
+{% endblock %}

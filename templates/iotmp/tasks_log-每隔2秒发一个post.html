@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a id="go_bottom" href="#bottom"></a>
+
+<div id="show" style="text-align: left;margin-left: 25%;">
+
+</div>
+
+<div id="bottom"></div>
+
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function tasks_log() {
+    var pathname = window.location.pathname ; //url, 等于request.path，类似 /jenkins/id/
+    var xhr=new XMLHttpRequest();
+    xhr.open('post',pathname, true); // true表示异步（默认），false表示同步（不推荐）
+    //如果不继承form的csfs_token，可用此方法
+    var csrftoken = getCookie('csrftoken');
+    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+
+    var formData = new FormData();
+
+    // path = "{{ project_name|safe }}"; // 这样可以引用html中的django变量值
+
+
+    // formData.append("recv_size", recv_size);
+
+    //下面这两个监听事件写在send前面比较保险，写在后面可能等文件发送完成了才会执行
+    xhr.onreadystatechange=function (){
+        if (xhr.readyState==4 && xhr.status==200) {
+            var dic = JSON.parse(xhr.responseText);
+            //console.log(dic);
+            var div_obj = document.getElementById('show');
+            div_obj.innerHTML = ""; //清空
+            for (var i=0;i<dic["file_content"].length;i++){
+                div_obj.innerHTML = div_obj.innerHTML + dic["file_content"][i] + "<br/>";
+                //div_obj.scrollIntoView()'
+                //("#show").scrollTop(Number.MAX_VALUE);
+                //recv_size = recv_size + dic["file_content"][i].length;
+                document.getElementById("go_bottom").click(); //使用锚，自动定位到底部
+            }
+            if ( dic["is_done"] === false ){
+                //window.setTimeout(tasks_log, 1000, recv_size);
+                window.setTimeout(tasks_log, 2000); //两秒之后执行
+            }
+
+        }
+    }
+
+    xhr.send(formData);
+
+
+
+}
+
+
+//var id = "{{ id|safe }}"; // 这样可以引用html中的id 变量值
+window.onload =  tasks_log();
+
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'iotmp/index.html' %}
+{% load mytags %}
+
+
+
+{% block right %}
+   <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+      <h2 class="sub-header">{{ version_name }}</h2>
+
+
+
+        <input type="file" id="uploadFiles"  name="uploadFiles" onchange="uploadFiles(this)"    multiple>
+
+
+        <div id="upload_info"></div>
+        <div id="upload_result"></div>
+        <br/>
+
+
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>文件名</th>
+              <th>上传用户</th>
+              <th>修改时间</th>
+              <th>md5</th>
+              <th>删除</th>
+            </tr>
+          </thead>
+          <tbody>
+              {% display_version_files query_sets %}
+            <!--
+            <tr>
+              <td>1,001</td>
+              <td>Lorem</td>
+              <td>ipsum</td>
+
+            </tr>
+            <tr>
+              <td>1,002</td>
+              <td>amet</td>
+              <td>consectetur</td>
+
+            </tr>
+            <tr>
+              <td>1,003</td>
+              <td>Integer</td>
+              <td>nec</td>
+
+            </tr>
+            -->
+          </tbody>
+        </table>
+      </div>
+
+      <nav>
+          <ul class="pagination">
+              {% if query_sets.has_previous %}
+                    <li class=""><a href="?_page={{ query_sets.previous_page_number }}">上页</a></li>
+              {% endif %}
+                {% build_paginators query_sets %}
+              {% if query_sets.has_next %}
+                    <li class=""><a href="?_page={{ query_sets.next_page_number }}">下页</a></li>
+              {% endif %}
+          </ul>
+      </nav>
+   </div>
+
+
+<script>
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function uploadFiles(self) {
+    //alert('path是：' + path);
+    //var count = 100;// 每次上传100个文件
+    var pathname = window.location.pathname ; //url, 等于request.path，类似 /jenkins/id/
+    var xhr=new XMLHttpRequest();
+    xhr.open('post',pathname, true); // true表示异步（默认），false表示同步（不推荐）
+    //如果不继承form的csfs_token，可用此方法
+    var csrftoken = getCookie('csrftoken');
+    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+
+    // console.log(self.files);
+
+    var formData = new FormData();
+    for (var i=0; i<self.files.length;i++){
+        formData.append('file_list', self.files[i]);
+    }
+    // path = "{{ project_name|safe }}"; // 这样可以引用html中的django变量值
+
+
+    //下面这两个监听事件写在send前面比较保险，写在后面可能等文件发送完成了才会执行
+    xhr.onreadystatechange=function (){
+        if (xhr.readyState==4 && xhr.status==200) {
+            document.getElementById('upload_result').innerHTML = xhr.responseText;
+            }
+        else {
+            document.getElementById('upload_result').innerHTML = "文件上传失败！";
+        }
+
+    }
+    xhr.upload.onprogress = function (ev) {
+        if (ev.lengthComputable){
+            var count = Math.round(100*ev.loaded/ev.total); //四舍五入
+            var msg = ">";
+            msg = "进度: "  + msg.repeat(count)  + String(count) + "% "  ;
+            document.getElementById("upload_info").innerHTML=msg;
+            document.getElementById("upload_result").innerHTML="文件上传中, 请稍等...";
+        }
+    }
+    xhr.send(formData);
+
+
+}
+
+</script>
+
+{% endblock %}
+
+
